@@ -1,6 +1,12 @@
-# Basic Template
+# FriendService
 
-A basic vapor template for starting a new Vapor web application. If you're using vapor toolbox, you can use: `vapor new --template=basic`
+Simple restful service written in swift using Vapor. FriendService is sample project for server-side swift example:
+http://swiftyjimmy.com/server-side-swift-setup-backend/
+
+Download or clone code and run vapor build. For more detailed instructions how to get the service up and running following the instructions in swiftyjimmy.com
+
+
+
 
 ## 📖 Documentation
 
@@ -10,6 +16,3 @@ Visit the Vapor web framework's [documentation](http://docs.vapor.codes) for ins
 
 Join the welcoming community of fellow Vapor developers in [slack](http://vapor.team).
 
-## 🔧 Compatibility
-
-This package has been tested on macOS and Ubuntu.
