@@ -7,60 +7,120 @@
 //
 
 import Vapor
-import Fluent
+import FluentProvider
 import Foundation
 import HTTP
 
 final class Friend: Model {
-    var id: Node?
-    var exists: Bool = false
+    let storage = Storage()
+
+    /// The column names in the database
+    static let firstnameKey = "firstname"
+    static let lastnameKey = "lastname"
+    static let phonenumberKey = "phonenumber"
+
     var firstname: String
     var lastname: String
     var phonenumber: String
 
     /// Convenience init
     init(firstname: String, lastname: String, phonenumber: String) {
-        self.id = nil
         self.firstname = firstname
         self.lastname = lastname
         self.phonenumber = phonenumber
     }
 
-    /// Fluent pulls our data as intermediate datamodel from the database
-    /// and we need to convert it back to typesafe model
-    init(node: Node, in context: Context) throws {
-        id = try node.extract("id")
-        firstname = try node.extract("firstname")
-        lastname = try node.extract("lastname")
-        phonenumber = try node.extract("phonenumber")
+    /// Initializes the Friend from the
+    /// database row
+    init(row: Row) throws {
+        firstname = try row.get(Friend.firstnameKey)
+        lastname = try row.get(Friend.lastnameKey)
+        phonenumber = try row.get(Friend.phonenumberKey)
     }
 
-    /// makeNode - JSONRepresentable
-    /// class can be converted to alternative representables
-    /// such as JSON and values that can be stored to database
-    func makeNode(context: Context) throws -> Node {
-        return try Node(node: [
-            "id": id,
-            "firstname": firstname,
-            "lastname": lastname,
-            "phonenumber": phonenumber
-            ])
-    }
-
-    /// Prepare the database. Creates the database when used for the first time.
-    static func prepare(_ database: Database) throws {
-        try database.create("friends") { friends in
-            friends.id()
-            friends.string("firstname")
-            friends.string("lastname")
-            friends.string("phonenumber")
-        }
-    }
-
-    /// Reverts the database (DROP TABLE)
-    static func revert(_ database: Database) throws {
-        try database.delete("friends")
+    // Serializes the Friend to the databasel
+    func makeRow() throws -> Row {
+        var row = Row()
+        try row.set(Friend.firstnameKey, firstname)
+        try row.set(Friend.lastnameKey, lastname)
+        try row.set(Friend.phonenumberKey, phonenumber)
+        return row
     }
 
 }
 
+// MARK: Fluent Preparation
+
+extension Friend: Preparation {
+    /// Prepares a table/collection in the database
+    /// for storing Friends
+    static func prepare(_ database: Database) throws {
+        try database.create(self) { builder in
+            builder.id()
+            builder.string(Friend.firstnameKey)
+            builder.string(Friend.lastnameKey)
+            builder.string(Friend.phonenumberKey)
+        }
+    }
+
+    /// Undoes what was done in `prepare`
+    static func revert(_ database: Database) throws {
+        try database.delete(self)
+    }
+}
+
+// MARK: JSON
+
+// How the model converts from / to JSON.
+// For example when:
+//     - Creating a new Friend (POST /addFriend)
+//     - Fetching a friend (GET /listFriends, GET /friends/:id)
+//
+extension Friend: JSONConvertible {
+    convenience init(json: JSON) throws {
+        try self.init(
+            firstname: json.get(Friend.firstnameKey),
+            lastname: json.get(Friend.lastnameKey),
+            phonenumber: json.get(Friend.phonenumberKey)
+        )
+    }
+
+    func makeJSON() throws -> JSON {
+        var json = JSON()
+        try json.set(Friend.idKey, id)
+        try json.set(Friend.firstnameKey, firstname)
+        try json.set(Friend.lastnameKey, lastname)
+        try json.set(Friend.phonenumberKey, phonenumber)
+        return json
+    }
+}
+
+// MARK: HTTP
+
+// This allows Friend models to be returned
+// directly in route closures
+extension Friend: ResponseRepresentable { }
+
+// MARK: Update
+
+// This allows the Friend model to be updated
+// dynamically by the request.
+extension Friend: Updateable {
+    // Updateable keys are called when `friend.update(for: req)` is called.
+    // Add as many updateable keys as you like here.
+    public static var updateableKeys: [UpdateableKey<Friend>] {
+        return [
+            // If the request contains a String at key "firstname", "lastname" and "phonenumber"
+            // the setter callback will be called.
+            UpdateableKey(Friend.firstnameKey, String.self) { friend, firstname in
+                friend.firstname = firstname
+            },
+            UpdateableKey(Friend.lastnameKey, String.self) { friend, lastname in
+                friend.lastname = lastname
+            },
+            UpdateableKey(Friend.phonenumberKey, String.self) { friend, phonenumber in
+                friend.phonenumber = phonenumber
+            }
+        ]
+    }
+}

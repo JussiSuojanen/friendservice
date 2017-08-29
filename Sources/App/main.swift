@@ -1,12 +1,15 @@
 import Vapor
-import VaporMySQL
+import MySQLProvider
 import HTTP
 
-let droplet = Droplet(preparations: [Friend.self], providers: [VaporMySQL.Provider.self])
+let config = try Config()
+try config.addProvider(MySQLProvider.Provider.self)
+config.preparations.append(Friend.self)
+let droplet = try Droplet(config)
 
 let friendsController = FriendController()
 
 droplet.resource("listFriends", friendsController)
 droplet.resource("addFriend", friendsController)
 droplet.resource("editFriend", friendsController)
-droplet.run()
+try droplet.run()

@@ -8,31 +8,29 @@
 
 import Vapor
 import HTTP
-import VaporMySQL
+import MySQLProvider
 
 class FriendController: ResourceRepresentable {
 
     func index(request: Request) throws -> ResponseRepresentable {
-        return try Friend.all().makeNode().converted(to: JSON.self)
+        return try Friend.all().makeJSON()
     }
 
     func create(request: Request) throws -> ResponseRepresentable {
-        var friend = try request.friend()
+        let friend = try request.friend()
         try friend.save()
         return friend
     }
 
     func delete(request: Request, friend: Friend) throws -> ResponseRepresentable {
         try friend.delete()
-        return JSON([:])
+        return Response(status: .ok)
     }
 
     func update(request: Request, friend: Friend) throws -> ResponseRepresentable {
-        let newInfo = try request.friend()
-        var friend = friend
-        friend.firstname = newInfo.firstname
-        friend.lastname = newInfo.lastname
-        friend.phonenumber = newInfo.phonenumber
+        let friend = friend
+        try friend.update(for: request)
+
         try friend.save()
         return friend
     }
@@ -40,7 +38,7 @@ class FriendController: ResourceRepresentable {
     func makeResource() -> Resource<Friend> {
         return Resource(index: index,
                         store: create,
-                        modify: update,
+                        update: update,
                         destroy: delete)
     }
 
@@ -52,6 +50,7 @@ extension Request {
         guard let json = json else {
             throw Abort.badRequest
         }
-        return try Friend(node: json)
+
+        return try Friend(json: json)
     }
 }
