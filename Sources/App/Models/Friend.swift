@@ -10,6 +10,7 @@ import Vapor
 import FluentProvider
 import Foundation
 import HTTP
+import Validation
 
 final class Friend: Model {
     let storage = Storage()
@@ -24,7 +25,12 @@ final class Friend: Model {
     var phonenumber: String
 
     /// Convenience init
-    init(firstname: String, lastname: String, phonenumber: String) {
+    init(firstname: String, lastname: String, phonenumber: String) throws {
+        // validate
+        try OnlyScandicAlpha().validate(firstname)
+        try OnlyScandicAlpha().validate(lastname)
+        try PhonenumberValidator().validate(phonenumber)
+
         self.firstname = firstname
         self.lastname = lastname
         self.phonenumber = phonenumber
