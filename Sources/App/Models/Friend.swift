@@ -31,6 +31,10 @@ final class Friend: Model {
         try OnlyScandicAlpha().validate(lastname)
         try PhonenumberValidator().validate(phonenumber)
 
+        let nameLengthValidator = Count<String>.containedIn(low: 2, high: 40)
+        try nameLengthValidator.validate(firstname)
+        try nameLengthValidator.validate(lastname)
+
         self.firstname = firstname
         self.lastname = lastname
         self.phonenumber = phonenumber
