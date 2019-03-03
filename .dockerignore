@@ -1,0 +1,13 @@
+# Ignore everything by default
+*
+# Allow only necessary project files
+!Config
+!Localization
+!Package.*
+!Procfile
+!Public
+!Resoirces
+!Sources
+!app.json
+!apt-vapor.sh
+!license
